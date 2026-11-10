@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>ClassTrack | Attendance Management</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1120;
+      --panel: #151e2f;
+      --panel-2: #1b2840;
+      --input: #101827;
+      --line: #2b3a51;
+      --text: #edf3ff;
+      --muted: #9cabc0;
+      --blue: #7192ff;
+      --green: #39c98a;
+      --yellow: #f3bb54;
+      --red: #ff6d7b;
+      --purple: #b393ff;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 28px 16px 48px;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse at 10% 0%, #1a2a4b 0, transparent 38%),
+        var(--bg);
+      font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .app { width: min(1120px, 100%); margin: auto; }
+
+    .brand-row, .brand, .header-actions, .section-heading, .toolbar,
+    .filters, .form-row, .tabs, .user-row {
+      display: flex;
+      align-items: center;
+    }
+
+    .brand-row, .section-heading, .user-row {
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand-row { margin-bottom: 22px; }
+    .brand { gap: 12px; }
+    .brand-icon {
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      color: white;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #668cff, #9b71ff);
+      box-shadow: 0 8px 26px #638cff35;
+      font-size: 23px;
+      font-weight: 800;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 2px; font-size: 1.25rem; }
+    h2 { margin-bottom: 4px; font-size: 1.18rem; }
+    h3 { margin-bottom: 6px; font-size: 1.4rem; }
+    .muted, .subtitle, .help { color: var(--muted); }
+    .subtitle { font-size: .86rem; }
+    .help { margin: 0; font-size: .9rem; }
+
+    .panel, .auth-card {
+      background: linear-gradient(145deg, #172236, var(--panel) 70%);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 18px 50px #00000022;
+    }
+
+    .panel { padding: 22px; }
+    .auth-card {
+      width: min(440px, 100%);
+      margin: 8vh auto;
+      padding: 30px;
+    }
+    .auth-header { text-align: center; margin-bottom: 22px; }
+    .auth-header .brand-icon { margin: 0 auto 15px; }
+    .auth-header p { color: var(--muted); margin: 6px 0 0; }
+    .auth-form { display: grid; gap: 12px; }
+    .auth-switch { text-align: center; color: var(--muted); margin: 18px 0 0; }
+    .link-button {
+      border: 0;
+      padding: 0;
+      color: #a9bcff;
+      background: none;
+      text-decoration: underline;
+    }
+
+    .user-row {
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #111a29;
+    }
+    .user-row strong { color: white; }
+    .header-actions { gap: 9px; }
+    .local-badge {
+      padding: 7px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: #c1d0e6;
+      background: #17243a;
+      font-size: .78rem;
+      white-space: nowrap;
+    }
+
+    .hero {
+      margin-bottom: 18px;
+      padding: 22px 24px;
+      border: 1px solid #34466a;
+      border-radius: 18px;
+      background: linear-gradient(110deg, #22385b, #19263c 72%);
+    }
+    .hero h2 { font-size: 1.45rem; }
+    .hero p { margin: 4px 0 0; color: #bac8dc; }
+
+    .tabs {
+      gap: 7px;
+      overflow-x: auto;
+      margin-bottom: 17px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #101827;
+    }
+    .tab {
+      padding: 10px 15px;
+      border: 0;
+      border-radius: 9px;
+      color: var(--muted);
+      background: transparent;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+    .tab:hover { color: white; background: #ffffff0b; }
+    .tab.active { color: white; background: #2b3c58; }
+    .tab-panel[hidden] { display: none; }
+
+    .section-heading { align-items: flex-start; margin-bottom: 18px; }
+    .form-row, .toolbar, .filters { flex-wrap: wrap; gap: 9px; }
+    .form-row { margin-bottom: 16px; }
+    .toolbar { margin: 14px 0; }
+
+    label { color: #cbd6e5; font-size: .9rem; }
+    input, select {
+      min-height: 42px;
+      padding: 9px 12px;
+      color: var(--text);
+      background: var(--input);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+    input:focus, select:focus, button:focus-visible {
+      outline: 3px solid #7192ff70;
+      outline-offset: 2px;
+    }
+    input[type="text"], input[type="password"] { width: 100%; }
+    .form-row input[type="text"] { flex: 1; min-width: 190px; }
+    .filters input[type="text"] { flex: 1; min-width: 180px; }
+    .filters label, .date-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    input[type="date"] { min-width: 150px; }
+
+    .btn {
+      min-height: 40px;
+      padding: 9px 13px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      color: white;
+      background: #2b3a51;
+      font-weight: 650;
+      transition: filter .15s, transform .15s;
+    }
+    .btn:hover { filter: brightness(1.13); transform: translateY(-1px); }
+    .btn-primary { color: #0b1425; background: var(--blue); }
+    .btn-danger { color: #ffb1b8; background: #46252d; border-color: #71343e; }
+    .btn-success { color: #09241a; background: var(--green); }
+    .btn-small { min-height: 32px; padding: 5px 9px; font-size: .82rem; }
+    .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+    .notice {
+      display: none;
+      margin: 0 0 14px;
+      padding: 10px 13px;
+      border: 1px solid #356c54;
+      border-radius: 10px;
+      color: #a7f0c9;
+      background: #18382c;
+    }
+    .notice.show { display: block; }
+    .auth-error {
+      display: none;
+      padding: 10px 12px;
+      border: 1px solid #743842;
+      border-radius: 10px;
+      color: #ffb6bd;
+      background: #3c2028;
+    }
+    .auth-error.show { display: block; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 11px;
+      margin: 16px 0;
+    }
+    .stat {
+      padding: 13px 15px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #111a29;
+    }
+    .stat-label { color: var(--muted); font-size: .82rem; }
+    .stat-value { margin-top: 2px; font-size: 1.4rem; font-weight: 750; }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    table { width: 100%; min-width: 570px; border-collapse: collapse; }
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+    }
+    th {
+      color: #aebdd2;
+      background: #111a29;
+      text-transform: uppercase;
+      font-size: .73rem;
+      letter-spacing: .06em;
+    }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #ffffff06; }
+    .empty { padding: 27px; color: var(--muted); text-align: center; }
+
+    .status {
+      display: inline-flex;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: .8rem;
+      font-weight: 750;
+    }
+    .status-Present { color: #82e8b6; background: #183d30; }
+    .status-Late { color: #ffda8b; background: #45371f; }
+    .status-Absent { color: #ffabb2; background: #48262e; }
+    .status-Excused { color: #d1baff; background: #34284c; }
+    .actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .footer-note { margin: 16px 2px 0; color: var(--muted); font-size: .82rem; }
+
+    @media (max-width: 650px) {
+      body { padding: 17px 11px 32px; }
+      .panel { padding: 16px; }
+      .hero { padding: 18px; }
+      .user-row { align-items: flex-start; }
+      .header-actions { flex-direction: column; align-items: flex-end; }
+      .section-heading { flex-direction: column; }
+      .stats { gap: 7px; }
+      .stat { padding: 10px; }
+      .stat-value { font-size: 1.2rem; }
+      .local-badge { font-size: .7rem; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <!-- LOGIN / CREATE ACCOUNT -->
+    <section id="authScreen">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="brand-icon" aria-hidden="true">✓</div>
+          <h1>ClassTrack</h1>
+          <p id="authSubtitle">Sign in to manage your class attendance.</p>
+        </div>
+
+        <div id="authError" class="auth-error" role="alert"></div>
+
+        <form id="loginForm" class="auth-form">
+          <input id="loginUsername" type="text" maxlength="40" placeholder="Username" autocomplete="username" required>
+          <input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password" required>
+          <button class="btn btn-primary" type="submit">Login</button>
+        </form>
+
+        <form id="registerForm" class="auth-form" hidden>
+          <input id="registerUsername" type="text" maxlength="40" placeholder="Choose a username" autocomplete="username" required>
+          <input id="registerPassword" type="password" minlength="8" placeholder="Create password (8+ characters)" autocomplete="new-password" required>
+          <input id="confirmPassword" type="password" minlength="8" placeholder="Confirm password" autocomplete="new-password" required>
+          <button class="btn btn-primary" type="submit">Create account</button>
+        </form>
+
+        <p id="loginSwitch" class="auth-switch">
+          Don't have an account?
+          <button class="link-button" type="button" data-auth-mode="register">Create account</button>
+        </p>
+        <p id="registerSwitch" class="auth-switch" hidden>
+          Already have an account?
+          <button class="link-button" type="button" data-auth-mode="login">Back to login</button>
+        </p>
+        <p class="footer-note">Demo app: accounts and data are saved only in this browser.</p>
+      </div>
+    </section>
+
+    <!-- MAIN APP -->
+    <section id="mainScreen" hidden>
+      <header class="brand-row">
+        <div class="brand">
+          <div class="brand-icon" aria-hidden="true">✓</div>
+          <div>
+            <h1>ClassTrack</h1>
+            <div class="subtitle">Student Attendance Management</div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <span class="local-badge">Saved on this device</span>
+          <button id="logoutButton" class="btn" type="button">Logout</button>
+        </div>
+      </header>
+
+      <div class="user-row">
+        <div>Welcome, <strong id="currentUsername"></strong></div>
+        <span class="muted">Manage your roster and attendance records</span>
+      </div>
+
+      <section class="hero">
+        <h2>Attendance made simple.</h2>
+        <p>Manage students, record daily attendance, and review or export reports.</p>
+      </section>
+
+      <nav class="tabs" aria-label="Main navigation">
+        <button class="tab active" type="button" data-tab="studentsPanel">Students</button>
+        <button class="tab" type="button" data-tab="attendancePanel">Attendance</button>
+        <button class="tab" type="button" data-tab="reportsPanel">Reports</button>
+      </nav>
+
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+      <!-- STUDENT CRUD -->
+      <section id="studentsPanel" class="tab-panel panel">
+        <div class="section-heading">
+          <div>
+            <h2>Student list</h2>
+            <p class="help">Create, edit, or remove students from your class.</p>
+          </div>
+        </div>
+        <form id="studentForm" class="form-row">
+          <input id="studentName" type="text" maxlength="80" placeholder="Enter student name" aria-label="Student name" required>
+          <button id="studentSubmit" class="btn btn-primary" type="submit">Add student</button>
+          <button id="cancelStudentEdit" class="btn" type="button" hidden>Cancel edit</button>
+        </form>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Student name</th><th>Actions</th></tr></thead>
+            <tbody id="studentsBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ATTENDANCE CRUD -->
+      <section id="attendancePanel" class="tab-panel panel" hidden>
+        <div class="section-heading">
+          <div>
+            <h2>Mark attendance</h2>
+            <p class="help">Select a date, set each status, and save. Saving again updates the date's records.</p>
+          </div>
+          <label class="date-label">Date <input id="attendanceDate" type="date"></label>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Marked</div><div class="stat-value" id="markedCount">0</div></div>
+          <div class="stat"><div class="stat-label">Remaining</div><div class="stat-value" id="remainingCount">0</div></div>
+          <div class="stat"><div class="stat-label">Students</div><div class="stat-value" id="attendanceTotal">0</div></div>
+        </div>
+
+        <div class="toolbar">
+          <label for="defaultStatus">Default for unmarked:</label>
+          <select id="defaultStatus">
+            <option value="Absent">Absent</option>
+            <option value="Present">Present</option>
+            <option value="Late">Late</option>
+            <option value="Excused">Excused</option>
+          </select>
+          <button id="saveAttendance" class="btn btn-primary" type="button">Save attendance</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Student name</th><th>Status</th></tr></thead>
+            <tbody id="attendanceBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- REPORTS CRUD -->
+      <section id="reportsPanel" class="tab-panel panel" hidden>
+        <div class="section-heading">
+          <div>
+            <h2>Attendance reports</h2>
+            <p class="help">Filter, edit, or delete saved attendance records.</p>
+          </div>
+          <button id="exportCsv" class="btn" type="button">Export CSV</button>
+        </div>
+
+        <div class="filters">
+          <input id="reportSearch" type="text" placeholder="Search student name" aria-label="Search student name">
+          <label>From <input id="dateFrom" type="date" aria-label="From date"></label>
+          <label>To <input id="dateTo" type="date" aria-label="To date"></label>
+          <select id="reportStatus" aria-label="Filter by status">
+            <option value="all">All statuses</option>
+            <option value="Present">Present</option>
+            <option value="Late">Late</option>
+            <option value="Absent">Absent</option>
+            <option value="Excused">Excused</option>
+          </select>
+          <button id="clearFilters" class="btn" type="button">Clear filters</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Student name</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="reportsBody"></tbody>
+          </table>
+        </div>
+        <p id="reportCount" class="footer-note"></p>
+      </section>
+
+      <p class="footer-note">
+        Local browser storage only. Clearing browser data or switching devices may remove or hide your records.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const ACCOUNTS_KEY = "classtrack.accounts.v1";
+      const SESSION_KEY = "classtrack.session.v1";
+      const STATUS_LIST = ["Present", "Late", "Absent", "Excused"];
+      const $ = (id) => document.getElementById(id);
+
+      let currentUser = null;
+      let students = [];
+      let attendance = {};
+      let editingStudentId = null;
+
+      function readJson(key, fallback) {
+        try {
+          const value = JSON.parse(localStorage.getItem(key));
+          return value ?? fallback;
+        } catch {
+          return fallback;
+        }
+      }
+
+      function writeJson(key, value) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+          return true;
+        } catch {
+          showNotice("Could not save data. Check your browser storage settings.");
+          return false;
+        }
+      }
+
+      function safeText(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        })[char]);
+      }
+
+      function userDataKey() {
+        return "classtrack.data.v1." + encodeURIComponent(currentUser.username.toLowerCase());
+      }
+
+      function showNotice(message) {
+        const notice = $("notice");
+        notice.textContent = message;
+        notice.classList.add("show");
+        clearTimeout(showNotice.timer);
+        showNotice.timer = setTimeout(() => notice.classList.remove("show"), 3200);
+      }
+
+      function showAuthError(message) {
+        const box = $("authError");
+        box.textContent = message;
+        box.classList.add("show");
+      }
+
+      function clearAuthError() {
+        $("authError").textContent = "";
+        $("authError").classList.remove("show");
+      }
+
+      function switchAuthMode(mode) {
+        const registering = mode === "register";
+        $("loginForm").hidden = registering;
+        $("registerForm").hidden = !registering;
+        $("loginSwitch").hidden = registering;
+        $("registerSwitch").hidden = !registering;
+        $("authSubtitle").textContent = registering
+          ? "Create an account to start managing attendance."
+          : "Sign in to manage your class attendance.";
+        clearAuthError();
+      }
+
+      async function hashPassword(password) {
+        if (!window.crypto || !window.crypto.subtle) {
+          throw new Error("Secure password hashing is unavailable in this browser. Open the Render HTTPS link.");
+        }
+        const bytes = new TextEncoder().encode(password);
+        const digest = await crypto.subtle.digest("SHA-256", bytes);
+        return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+      }
+
+      function loadUserData() {
+        const data = readJson(userDataKey(), { students: [], attendance: {} });
+        students = Array.isArray(data.students) ? data.students : [];
+        attendance = data.attendance && typeof data.attendance === "object" ? data.attendance : {};
+      }
+
+      function saveUserData() {
+        return writeJson(userDataKey(), { students, attendance });
+      }
+
+      function enterApp(username) {
+        currentUser = { username };
+        writeJson(SESSION_KEY, currentUser);
+        loadUserData();
+        $("currentUsername").textContent = username;
+        $("authScreen").hidden = true;
+        $("mainScreen").hidden = false;
+        renderStudents();
+        renderAttendance();
+        renderReports();
+      }
+
+      function logout() {
+        currentUser = null;
+        students = [];
+        attendance = {};
+        localStorage.removeItem(SESSION_KEY);
+        $("mainScreen").hidden = true;
+        $("authScreen").hidden = false;
+        $("loginPassword").value = "";
+        switchAuthMode("login");
+      }
+
+      function localDateString(date = new Date()) {
+        const adjusted = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+        return adjusted.toISOString().slice(0, 10);
+      }
+
+      function makeId() {
+        return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      }
+
+      function renderStudents() {
+        const body = $("studentsBody");
+        if (!students.length) {
+          body.innerHTML = '<tr><td class="empty" colspan="3">No students yet. Add your first student above.</td></tr>';
+          return;
+        }
+
+        body.innerHTML = students.map((student, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${safeText(student.name)}</td>
+            <td class="actions">
+              <button class="btn btn-small" type="button" data-edit-student="${safeText(student.id)}">Edit</button>
+              <button class="btn btn-danger btn-small" type="button" data-delete-student="${safeText(student.id)}">Delete</button>
+            </td>
+          </tr>`).join("");
+      }
+
+      function renderAttendance() {
+        const body = $("attendanceBody");
+        const date = $("attendanceDate").value;
+        const day = attendance[date] || {};
+        $("attendanceTotal").textContent = students.length;
+
+        if (!students.length) {
+          body.innerHTML = '<tr><td class="empty" colspan="3">Add students in the Students tab first.</td></tr>';
+          updateProgress();
+          return;
+        }
+
+        body.innerHTML = students.map((student, index) => {
+          const record = day[student.id];
+          const status = typeof record === "string" ? record : record?.status || "";
+          return `<tr>
+            <td>${index + 1}</td>
+            <td>${safeText(student.name)}</td>
+            <td>
+              <select class="attendance-status" data-student="${safeText(student.id)}" aria-label="Status for ${safeText(student.name)}">
+                <option value="">Choose status</option>
+                ${STATUS_LIST.map(item => `<option value="${item}" ${status === item ? "selected" : ""}>${item}</option>`).join("")}
+              </select>
+            </td>
+          </tr>`;
+        }).join("");
+        updateProgress();
+      }
+
+      function updateProgress() {
+        const selects = [...document.querySelectorAll(".attendance-status")];
+        const marked = selects.filter(select => select.value).length;
+        $("markedCount").textContent = marked;
+        $("remainingCount").textContent = Math.max(0, students.length - marked);
+      }
+
+      function getRecords() {
+        const search = $("reportSearch").value.trim().toLowerCase();
+        const from = $("dateFrom").value;
+        const to = $("dateTo").value;
+        const filterStatus = $("reportStatus").value;
+        const records = [];
+
+        for (const [date, day] of Object.entries(attendance)) {
+          if (!day || typeof day !== "object") continue;
+
+          for (const [studentId, rawRecord] of Object.entries(day)) {
+            const record = typeof rawRecord === "string"
+              ? { status: rawRecord, name: "" }
+              : rawRecord;
+            if (!record || !STATUS_LIST.includes(record.status)) continue;
+
+            const student = students.find(item => item.id === studentId);
+            const name = record.name || student?.name || "Removed student";
+            if (search && !name.toLowerCase().includes(search)) continue;
+            if (from && date < from) continue;
+            if (to && date > to) continue;
+            if (filterStatus !== "all" && record.status !== filterStatus) continue;
+
+            records.push({ date, studentId, name, status: record.status });
+          }
+        }
+
+        return records.sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name));
+      }
+
+      function renderReports() {
+        const records = getRecords();
+        $("reportCount").textContent = `${records.length} record${records.length === 1 ? "" : "s"} shown`;
+
+        $("reportsBody").innerHTML = records.length
+          ? records.map(record => `<tr>
+              <td>${safeText(record.date)}</td>
+              <td>${safeText(record.name)}</td>
+              <td><span class="status status-${record.status}">${record.status}</span></td>
+              <td class="actions">
+                <button class="btn btn-small" type="button"
+                  data-edit-record="${safeText(record.date)}|${safeText(record.studentId)}">Edit</button>
+                <button class="btn btn-danger btn-small" type="button"
+                  data-delete-record="${safeText(record.date)}|${safeText(record.studentId)}">Delete</button>
+              </td>
+            </tr>`).join("")
+          : '<tr><td class="empty" colspan="4">No matching attendance records.</td></tr>';
+      }
+
+      $("loginSwitch").addEventListener("click", event => {
+        if (event.target.matches("[data-auth-mode]")) switchAuthMode("register");
+      });
+      $("registerSwitch").addEventListener("click", event => {
+        if (event.target.matches("[data-auth-mode]")) switchAuthMode("login");
+      });
+
+      $("loginForm").addEventListener("submit", async event => {
+        event.preventDefault();
+        clearAuthError();
+
+        const username = $("loginUsername").value.trim();
+        const password = $("loginPassword").value;
+        const accounts = readJson(ACCOUNTS_KEY, []);
+        const account = accounts.find(item => item.username.toLowerCase() === username.toLowerCase());
+
+        if (!account) {
+          showAuthError("Account not found. Check your username or create an account.");
+          return;
+        }
+
+        try {
+          const hash = await hashPassword(password);
+          if (hash !== account.passwordHash) {
+            showAuthError("Incorrect username or password.");
+            return;
+          }
+          enterApp(account.username);
+        } catch (error) {
+          showAuthError(error.message || "Could not log in.");
+        }
+      });
+
+      $("registerForm").addEventListener("submit", async event => {
+        event.preventDefault();
+        clearAuthError();
+
+        const username = $("registerUsername").value.trim();
+        const password = $("registerPassword").value;
+        const confirm = $("confirmPassword").value;
+
+        if (!/^[a-zA-Z0-9._-]{3,40}$/.test(username)) {
+          showAuthError("Username must be 3–40 characters and may use letters, numbers, dot, underscore, or hyphen.");
+          return;
+        }
+        if (password.length < 8) {
+          showAuthError("Password must be at least 8 characters.");
+          return;
+        }
+        if (password !== confirm) {
+          showAuthError("Passwords do not match.");
+          return;
+        }
+
+        const accounts = readJson(ACCOUNTS_KEY, []);
+        if (accounts.some(item => item.username.toLowerCase() === username.toLowerCase())) {
+          showAuthError("That username already exists in this browser.");
+          return;
+        }
+
+        try {
+          const passwordHash = await hashPassword(password);
+          accounts.push({ username, passwordHash });
+          if (!writeJson(ACCOUNTS_KEY, accounts)) return;
+          $("registerForm").reset();
+          enterApp(username);
+        } catch (error) {
+          showAuthError(error.message || "Could not create account.");
+        }
+      });
+
+      $("logoutButton").addEventListener("click", logout);
+
+      $("studentForm").addEventListener("submit", event => {
+        event.preventDefault();
+        const name = $("studentName").value.trim();
+        if (!name) return;
+
+        if (students.some(student =>
+          student.name.toLowerCase() === name.toLowerCase() && student.id !== editingStudentId
+        )) {
+          showNotice("That student is already on the list.");
+          return;
+        }
+
+        if (editingStudentId) {
+          const student = students.find(item => item.id === editingStudentId);
+          if (student) {
+            student.name = name;
+            for (const day of Object.values(attendance)) {
+              if (day?.[student.id] && typeof day[student.id] === "object") {
+                day[student.id].name = name;
+              }
+            }
+            showNotice("Student updated.");
+          }
+        } else {
+          students.push({ id: makeId(), name });
+          showNotice("Student added.");
+        }
+
+        saveUserData();
+        resetStudentForm();
+        renderStudents();
+        renderAttendance();
+        renderReports();
+      });
+
+      function resetStudentForm() {
+        editingStudentId = null;
+        $("studentForm").reset();
+        $("studentSubmit").textContent = "Add student";
+        $("cancelStudentEdit").hidden = true;
+      }
+
+      $("cancelStudentEdit").addEventListener("click", resetStudentForm);
+
+      $("studentsBody").addEventListener("click", event => {
+        const editButton = event.target.closest("[data-edit-student]");
+        const deleteButton = event.target.closest("[data-delete-student]");
+
+        if (editButton) {
+          const student = students.find(item => item.id === editButton.dataset.editStudent);
+          if (!student) return;
+          editingStudentId = student.id;
+          $("studentName").value = student.name;
+          $("studentSubmit").textContent = "Save changes";
+          $("cancelStudentEdit").hidden = false;
+          $("studentName").focus();
+        }
+
+        if (deleteButton) {
+          const student = students.find(item => item.id === deleteButton.dataset.deleteStudent);
+          if (!student || !confirm(`Delete ${student.name} from the student list? Past attendance reports will remain.`)) return;
+          students = students.filter(item => item.id !== student.id);
+          saveUserData();
+          renderStudents();
+          renderAttendance();
+          renderReports();
+          showNotice("Student deleted.");
+        }
+      });
+
+      $("attendanceDate").addEventListener("change", renderAttendance);
+      $("attendanceBody").addEventListener("change", event => {
+        if (event.target.matches(".attendance-status")) updateProgress();
+      });
+
+      $("saveAttendance").addEventListener("click", () => {
+        const date = $("attendanceDate").value;
+        if (!date) {
+          showNotice("Choose a date first.");
+          return;
+        }
+        if (!students.length) {
+          showNotice("Add students before saving attendance.");
+          return;
+        }
+
+        const oldDay = attendance[date] || {};
+        const day = {};
+        document.querySelectorAll(".attendance-status").forEach(select => {
+          const student = students.find(item => item.id === select.dataset.student);
+          const status = select.value || $("defaultStatus").value;
+          day[select.dataset.student] = { status, name: student?.name || "Student" };
+        });
+
+        // Keep any existing record for a student no longer in the roster.
+        for (const [studentId, record] of Object.entries(oldDay)) {
+          if (!(studentId in day)) day[studentId] = record;
+        }
+
+        attendance[date] = day;
+        if (saveUserData()) {
+          renderAttendance();
+          renderReports();
+          showNotice(`Attendance saved for ${date}.`);
+        }
+      });
+
+      document.querySelectorAll(".tab").forEach(button => {
+        button.addEventListener("click", () => {
+          document.querySelectorAll(".tab").forEach(tab =>
+            tab.classList.toggle("active", tab === button)
+          );
+          document.querySelectorAll(".tab-panel").forEach(panel => {
+            panel.hidden = panel.id !== button.dataset.tab;
+          });
+          if (button.dataset.tab === "attendancePanel") renderAttendance();
+          if (button.dataset.tab === "reportsPanel") renderReports();
+        });
+      });
+
+      ["reportSearch", "dateFrom", "dateTo", "reportStatus"].forEach(id => {
+        $(id).addEventListener("input", renderReports);
+        $(id).addEventListener("change", renderReports);
+      });
+
+      $("clearFilters").addEventListener("click", () => {
+        $("reportSearch").value = "";
+        $("dateFrom").value = "";
+        $("dateTo").value = "";
+        $("reportStatus").value = "all";
+        renderReports();
+      });
+
+      $("reportsBody").addEventListener("click", event => {
+        const editButton = event.target.closest("[data-edit-record]");
+        const deleteButton = event.target.closest("[data-delete-record]");
+
+        if (editButton) {
+          const [date, studentId] = editButton.dataset.editRecord.split("|");
+          const day = attendance[date];
+          const raw = day?.[studentId];
+          const record = typeof raw === "string" ? { status: raw } : raw;
+          if (!record) return;
+
+          const answer = prompt(
+            `Edit status for ${record.name || "student"} on ${date}.\nEnter Present, Late, Absent, or Excused:`,
+            record.status
+          );
+          if (answer === null) return;
+
+          const status = STATUS_LIST.find(item => item.toLowerCase() === answer.trim().toLowerCase());
+          if (!status) {
+            showNotice("Invalid status. Use Present, Late, Absent, or Excused.");
+            return;
+          }
+
+          day[studentId] = {
+            status,
+            name: record.name || students.find(item => item.id === studentId)?.name || "Removed student"
+          };
+          saveUserData();
+          renderAttendance();
+          renderReports();
+          showNotice("Attendance record updated.");
+        }
+
+        if (deleteButton) {
+          const [date, studentId] = deleteButton.dataset.deleteRecord.split("|");
+          if (!attendance[date]?.[studentId]) return;
+          if (!confirm(`Delete this attendance record for ${date}?`)) return;
+
+          delete attendance[date][studentId];
+          if (Object.keys(attendance[date]).length === 0) delete attendance[date];
+          saveUserData();
+          renderAttendance();
+          renderReports();
+          showNotice("Attendance record deleted.");
+        }
+      });
+
+      $("exportCsv").addEventListener("click", () => {
+        const records = getRecords();
+        if (!records.length) {
+          showNotice("There are no records to export.");
+          return;
+        }
+
+        const quote = value => `"${String(value).replace(/"/g, '""')}"`;
+        const csv = [
+          ["Date", "Student name", "Status"].map(quote).join(","),
+          ...records.map(record => [record.date, record.name, record.status].map(quote).join(","))
+        ].join("\r\n");
+
+        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `attendance-${localDateString()}.csv`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      });
+
+      $("attendanceDate").value = localDateString();
+
+      const session = readJson(SESSION_KEY, null);
+      if (session?.username) {
+        enterApp(session.username);
+      }
+    })();
+  </script>
+</body>
+</html>
