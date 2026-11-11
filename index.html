@@ -407,6 +407,57 @@
       font-size: 0.8rem;
       margin: 0 4px;
     }
+
+    @media print {
+      body {
+        padding: 0;
+        background: #fff;
+        color: #000;
+      }
+
+      #authScreen,
+      .tab-links,
+      #studentsTab,
+      #markTab,
+      .filter-bar,
+      .sort-bar,
+      button,
+      input,
+      select {
+        display: none !important;
+      }
+
+      #mainScreen,
+      .container,
+      #reportsTab {
+        display: block !important;
+        max-width: none;
+        padding: 0;
+        margin: 0;
+        color: #000;
+        background: #fff;
+        border: 0;
+        box-shadow: none;
+        overflow: visible;
+      }
+
+      #reportsTab h2 {
+        color: #000;
+      }
+
+      table {
+        margin-top: 12px;
+        color: #000;
+        background: #fff;
+        box-shadow: none;
+      }
+
+      th, td {
+        color: #000 !important;
+        background: #fff !important;
+        border: 1px solid #999;
+      }
+    }
   </style>
 </head>
 <body>
@@ -476,13 +527,11 @@
         <input type="date" id="attendanceDate" onchange="loadDayStatus()">
         <br><br>
 
-        <!-- Progress -->
         <div class="progress-bar">
           <span class="progress-text">✅ Marked: <span id="markedCount">0</span> / Total: <span id="totalCount">0</span></span>
           <span class="progress-text">👤 Remaining to mark: <span id="unmarkedCount">0</span></span>
         </div>
 
-        <!-- Auto-mark -->
         <div class="auto-mark-bar">
           <div>
             <strong style="color:var(--grey-20);">Unchecked students default to:</strong>
@@ -495,7 +544,6 @@
           <p class="auto-note">✅ When you save, remaining unchecked will be marked above</p>
         </div>
 
-        <!-- Select All -->
         <div class="select-all-bar">
           <label style="cursor:pointer;">
             <input type="checkbox" id="selectAllCheck" onchange="toggleSelectAll()">
@@ -520,7 +568,10 @@
 
       <!-- TAB: REPORTS -->
       <div id="reportsTab" class="tab-content">
-        <h2>Attendance Reports</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <h2>Attendance Reports</h2>
+          <button class="btn-neutral" onclick="printReports()">🖨️ Print Report</button>
+        </div>
 
         <div class="filter-bar">
           <div class="date-group">
@@ -657,28 +708,70 @@
       return hash.toString(16);
     }
 
-    function login() {
+    function legacyUnsignedHash(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+      }
+      return hash.toString(16).padStart(8, "0");
+    }
+
+    async function sha256Hash(str) {
+      if (!window.crypto || !crypto.subtle) return null;
+
+      const bytes = new TextEncoder().encode(str);
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+
+      return Array.from(new Uint8Array(digest))
+        .map(byte => byte.toString(16).padStart(2, "0"))
+        .join("");
+    }
+
+    function createDefaultAccountIfMissing() {
+      const accounts = readJSON(STORAGE_KEYS.accounts, []);
+      const teacher = accounts.find(account => account.username.toLowerCase() === "teacher");
+
+      if (teacher) {
+        teacher.password = hashString("123456");
+      } else {
+        accounts.push({
+          username: "teacher",
+          password: hashString("123456")
+        });
+      }
+
+      writeJSON(STORAGE_KEYS.accounts, accounts);
+    }
+
+    async function login() {
       const username = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value;
 
       const accounts = readJSON(STORAGE_KEYS.accounts, []);
-
-      const account = accounts.find(acc => acc.username === username);
+      const account = accounts.find(item => item.username.toLowerCase() === username.toLowerCase());
 
       if (!account) {
         showLoginError("Account not found. Please create one.");
         return;
       }
 
-      const enteredHash = hashString(password);
-      if (account.password !== enteredHash) {
-        showLoginError("Incorrect password.");
+      const storedPassword = account.password || account.passwordHash;
+      const hashesToTry = [
+        hashString(password),
+        legacyUnsignedHash(password)
+      ];
+
+      const shaHash = await sha256Hash(password);
+      if (shaHash) hashesToTry.push(shaHash);
+
+      if (!hashesToTry.includes(storedPassword)) {
+        showLoginError("Incorrect password. Use teacher / 123456 or create a new account.");
         return;
       }
 
-      currentUser = { username };
+      currentUser = { username: account.username };
       writeJSON(STORAGE_KEYS.sessions, currentUser);
-      loadUserData(username);
+      loadUserData(account.username);
       showMainApp();
       hideLoginError();
     }
@@ -1070,6 +1163,11 @@
       applyFilters();
     }
 
+    function printReports() {
+      document.querySelector(".tab-link[data-tab='reports']").click();
+      setTimeout(() => window.print(), 150);
+    }
+
     function restoreSession() {
       const session = readJSON(STORAGE_KEYS.sessions, null);
 
@@ -1083,6 +1181,7 @@
     }
 
     window.onload = function() {
+      createDefaultAccountIfMissing();
       document.getElementById("attendanceDate").value = getCurrentDate();
       restoreSession();
       setupTabs();
